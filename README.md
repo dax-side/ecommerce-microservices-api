@@ -145,7 +145,6 @@ The system has been thoroughly tested under various load conditions:
 
 ### Development Tools
 - **Package Manager**: npm
-- **Code Quality**: ESLint, Prettier
 - **Build Tool**: TypeScript compiler
 - **Testing**: Custom load testing framework
 
@@ -529,22 +528,18 @@ The system collects comprehensive metrics across all layers:
 - Service health status
 - Request volume and error rates
 - Resource utilization
-- Performance trends
 
 #### Performance Dashboard
-- Response time percentiles
+- Response time analysis
 - Throughput metrics
-- Error rate analysis
-- SLA compliance
+- Error rate monitoring
 
 ### Alerting
 
-Configured alerts for:
-- High error rates (>5%)
-- Slow response times (>2s)
-- Resource exhaustion (>80% CPU/Memory)
-- Service unavailability
-- Database connection issues
+Basic monitoring capabilities for:
+- Service availability
+- Response time monitoring
+- Resource utilization tracking
 
 ## Load Testing
 
@@ -620,13 +615,6 @@ const loadTest = {
    cd api-gateway && npm run dev
    ```
 
-### Code Quality
-
-- **TypeScript**: Strict type checking enabled
-- **ESLint**: Comprehensive linting rules
-- **Prettier**: Code formatting
-- **Husky**: Git hooks for quality checks
-
 ### Testing
 
 ```bash
@@ -634,10 +622,6 @@ const loadTest = {
 cd load-tests
 npm install
 node simple-test.js
-
-# Run specific service tests
-cd user-service
-npm test
 ```
 
 ## Deployment
@@ -712,18 +696,14 @@ upstream user_service {
 ### Development Guidelines
 
 - Follow TypeScript best practices
-- Write comprehensive tests
 - Update documentation
-- Follow conventional commit messages
 - Ensure performance benchmarks are met
 
 ### Code Style
 
 - Use TypeScript strict mode
-- Follow ESLint configuration
-- Use Prettier for formatting
 - Write clear, self-documenting code
-- Include JSDoc comments for public APIs
+- Include comments for complex logic
 
 ## License
 
