@@ -1,0 +1,84 @@
+config:
+  target: 'http://localhost:3000'
+  phases:
+    # Warm up phase
+    - duration: 30
+      arrivalRate: 5
+      name: "Warm up"
+    # Ramp up phase
+    - duration: 60
+      arrivalRate: 10
+      rampTo: 50
+      name: "Ramp up load"
+    # Sustained load phase
+    - duration: 120
+      arrivalRate: 50
+      name: "Sustained load"
+    # Spike test
+    - duration: 30
+      arrivalRate: 100
+      name: "Spike test"
+
+scenarios:
+  - name: "API Health Check"
+    weight: 20
+    flow:
+      - get:
+          url: "/health"
+      - think: 1
+
+  - name: "User Registration and Login"
+    weight: 30
+    flow:
+      - post:
+          url: "/api/auth/register"
+          json:
+            email: "loadtest{{ $randomNumber() }}@example.com"
+            password: "password123"
+            name: "Load Test User {{ $randomNumber() }}"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+      - think: 2
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "loadtest{{ $randomNumber() }}@example.com"
+            password: "password123"
+      - think: 1
+
+  - name: "Product Operations"
+    weight: 25
+    flow:
+      - get:
+          url: "/api/products"
+      - think: 1
+      - post:
+          url: "/api/products"
+          json:
+            name: "Load Test Product {{ $randomNumber() }}"
+            description: "Product created during load test"
+            price: "{{ $randomNumber(10, 1000) }}"
+            category: "Electronics"
+            stock: "{{ $randomNumber(1, 100) }}"
+      - think: 2
+
+  - name: "Category Operations"
+    weight: 15
+    flow:
+      - get:
+          url: "/api/categories"
+      - think: 1
+      - post:
+          url: "/api/categories"
+          json:
+            name: "Category {{ $randomNumber() }}"
+            description: "Test category"
+      - think: 1
+
+  - name: "Order Operations"
+    weight: 10
+    flow:
+      - get:
+          url: "/api/orders"
+      - think: 2
