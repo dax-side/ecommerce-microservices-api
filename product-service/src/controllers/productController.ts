@@ -10,7 +10,7 @@ export const getAllProducts = async (req: Request, res: Response) => {
     // Try cache first
     const cachedProducts = await cache.get(cacheKey);
     if (cachedProducts) {
-      console.log('📦 Serving from cache');
+      console.log('Serving from cache');
       return res.json({ products: cachedProducts, cached: true });
     }
     
@@ -20,7 +20,7 @@ export const getAllProducts = async (req: Request, res: Response) => {
     // Cache for 5 minutes
     await cache.set(cacheKey, products, 300);
     
-    console.log('🗄️ Serving from database');
+    console.log('Serving from database');
     res.json({ products, cached: false });
   } catch (error) {
     console.error('Get products error:', error);
