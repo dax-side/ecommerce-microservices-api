@@ -167,11 +167,11 @@ app.use((error: any, req: express.Request, res: express.Response, next: express.
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Optimized API Gateway running on port ${PORT}`);
-  console.log(`💾 Compression enabled`);
-  console.log(`🛡️ Rate limiting: 1000 req/15min`);
-  console.log(`🔐 Auth rate limiting: 50 req/15min`);
-  console.log(`⏱️ Request timeout: 30s`);
+  console.log(`Optimized API Gateway running on port ${PORT}`);
+  console.log(`Compression enabled`);
+  console.log(`Rate limiting: 1000 req/15min`);
+  console.log(`Auth rate limiting: 50 req/15min`);
+  console.log(`Request timeout: 30s`);
 });
 
 export default app;
