@@ -1,38 +1,51 @@
-// ===== Optimized src/config/database.ts for ALL services =====
+// ===== Optimized Database Configuration for 500+ Concurrent Users =====
 import mongoose from 'mongoose';
 
 export const connectDB = async () => {
   try {
     const conn = await mongoose.connect(process.env.MONGODB_URL!, {
-      // Connection Pool Optimization
-      maxPoolSize: 10,          // Maintain up to 10 socket connections
-      minPoolSize: 5,           // Maintain minimum 5 connections
-      maxIdleTimeMS: 30000,     // Close connections after 30 seconds of inactivity
-      serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
-      socketTimeoutMS: 45000,   // Close sockets after 45 seconds of inactivity
+      // ===== Connection Pool Optimization for High Concurrency =====
+      maxPoolSize: 50,          // Increased from 10 to handle 500 users
+      minPoolSize: 20,          // Increased from 5 for faster response
+      maxIdleTimeMS: 30000,     // Close idle connections after 30s
+      serverSelectionTimeoutMS: 5000, // Server selection timeout
+      socketTimeoutMS: 45000,   // Socket timeout
+      connectTimeoutMS: 10000,  // Connection timeout
       
-      // Reliability
+      // Reliability & Performance
       retryWrites: true,
+      retryReads: true,
+      
+      // Write concern for better performance (sacrifice some durability)
+      w: 'majority',
+      wtimeoutMS: 2500,
     });
     
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
-    console.log(`Connection Pool - Min: 5, Max: 10`);
+    console.log(`[OK] MongoDB Connected: ${conn.connection.host}`);
+    console.log(`[INFO] Connection Pool - Min: 20, Max: 50`);
     
     // Monitor connection events
     mongoose.connection.on('connected', () => {
-      console.log('Mongoose connected to DB');
+      console.log('[OK] Mongoose connected to DB');
     });
     
     mongoose.connection.on('error', (err) => {
-      console.error('Mongoose connection error:', err);
+      console.error('[ERROR] Mongoose connection error:', err);
     });
     
     mongoose.connection.on('disconnected', () => {
-      console.log('Mongoose disconnected');
+      console.log('[WARN] Mongoose disconnected');
+    });
+
+    // Graceful shutdown
+    process.on('SIGINT', async () => {
+      await mongoose.connection.close();
+      console.log('MongoDB connection closed through app termination');
+      process.exit(0);
     });
     
   } catch (error) {
-    console.error('Database connection error:', error);
+    console.error('[ERROR] Database connection error:', error);
     process.exit(1);
   }
 };
