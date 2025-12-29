@@ -11,7 +11,7 @@ const categorySchema = new Schema<ICategory>({
   name: {
     type: String,
     required: true,
-    unique: true,
+    unique: true,  // This automatically creates an index
     trim: true
   },
   description: {
@@ -21,5 +21,12 @@ const categorySchema = new Schema<ICategory>({
 }, {
   timestamps: true
 });
+
+// ===== Performance Indexes =====
+// Index for sorting by name (alphabetical listing)
+categorySchema.index({ name: 1 });
+
+// Index for creation date (recent categories)
+categorySchema.index({ createdAt: -1 });
 
 export const Category = mongoose.model<ICategory>('Category', categorySchema);
