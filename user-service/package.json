@@ -1,19 +1,20 @@
 {
   "name": "user-service",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "main": "dist/app.js",
   "scripts": {
     "dev": "nodemon src/app.ts",
     "build": "tsc",
     "start": "node dist/app.js"
   },
-  "keywords": [],
+  "keywords": ["microservices", "users", "auth", "ecommerce"],
   "author": "",
   "license": "MIT",
-  "description": "User management microservice",
+  "description": "User management microservice with caching",
   "dependencies": {
     "@types/ioredis": "^4.28.10",
     "bcryptjs": "^3.0.2",
+    "bull": "^4.12.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.0",
     "express": "^5.1.0",
@@ -24,6 +25,7 @@
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
+    "@types/bull": "^4.10.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/jsonwebtoken": "^9.0.10",
