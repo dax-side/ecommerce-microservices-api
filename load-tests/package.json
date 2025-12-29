@@ -1,15 +1,31 @@
 {
   "name": "load-tests",
-  "version": "1.0.0",
+  "version": "2.0.0",
+  "description": "High-performance load testing suite for e-commerce microservices",
   "main": "simple-test.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test:simple": "node simple-test.js",
+    "test:artillery": "npx artillery run artillery-load-test.yml",
+    "test:artillery:quick": "npx artillery run artillery-quick-test.yml",
+    "test:artillery:500": "npx artillery run artillery-load-test.yml",
+    "test:artillery:report": "npx artillery run --output report.json artillery-load-test.yml && npx artillery report report.json",
+    "test:k6": "k6 run k6-load-test.js",
+    "test:k6:500": "k6 run --vus 500 --duration 60s k6-load-test.js"
   },
-  "keywords": [],
+  "keywords": [
+    "load-testing",
+    "artillery",
+    "k6",
+    "performance"
+  ],
   "author": "",
   "license": "ISC",
-  "description": "",
   "dependencies": {
     "axios": "^1.10.0"
+  },
+  "devDependencies": {
+    "artillery": "^2.0.21",
+    "artillery-plugin-expect": "^2.0.0",
+    "artillery-plugin-metrics-by-endpoint": "^1.0.0"
   }
 }
