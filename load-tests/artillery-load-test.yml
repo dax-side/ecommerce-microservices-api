@@ -1,0 +1,214 @@
+# ===== Artillery Load Test Configuration for 500 Concurrent Users =====
+# Run with: npx artillery run artillery-load-test.yml
+# Or with report: npx artillery run --output report.json artillery-load-test.yml
+
+config:
+  target: "http://localhost:3000"
+  phases:
+    # Phase 1: Warm-up (30 seconds, ramp from 0 to 100 users)
+    - name: "Warm-up"
+      duration: 30
+      arrivalRate: 5
+      rampTo: 100
+    
+    # Phase 2: Ramp-up to 300 users (60 seconds)
+    - name: "Ramp to 300"
+      duration: 60
+      arrivalRate: 100
+      rampTo: 300
+    
+    # Phase 3: Peak load at 500 users (120 seconds)
+    - name: "Peak Load - 500 Users"
+      duration: 120
+      arrivalRate: 500
+    
+    # Phase 4: Sustained load (60 seconds)
+    - name: "Sustained Load"
+      duration: 60
+      arrivalRate: 500
+    
+    # Phase 5: Cool-down (30 seconds)
+    - name: "Cool-down"
+      duration: 30
+      arrivalRate: 500
+      rampTo: 50
+
+  # Performance thresholds
+  ensure:
+    - metricName: "http.response_time.p99"
+      lessThan: 3000  # 99th percentile under 3 seconds
+    - metricName: "http.response_time.p95"
+      lessThan: 2000  # 95th percentile under 2 seconds
+    - metricName: "http.codes.2xx"
+      greaterThan: 70  # At least 70% success rate
+  
+  # Default settings
+  defaults:
+    headers:
+      Content-Type: "application/json"
+      Accept: "application/json"
+  
+  # Variables for dynamic data
+  variables:
+    baseProductId: "6577a1b2c3d4e5f6a7b8c9d0"
+  
+  # Plugins
+  plugins:
+    expect: {}
+    metrics-by-endpoint: {}
+
+# ===== Test Scenarios =====
+scenarios:
+  # Scenario 1: Health Check Only (10% of traffic)
+  - name: "Health Check"
+    weight: 10
+    flow:
+      - get:
+          url: "/health"
+          expect:
+            - statusCode: 200
+
+  # Scenario 2: Browse Products (40% of traffic - most common)
+  - name: "Browse Products"
+    weight: 40
+    flow:
+      - get:
+          url: "/api/products"
+          expect:
+            - statusCode: 200
+          capture:
+            - json: "$.products[0]._id"
+              as: "productId"
+      - think: 1
+      - get:
+          url: "/api/products/{{ productId }}"
+          ifTrue: "productId"
+          expect:
+            - statusCode: 200
+      - think: 2
+      - get:
+          url: "/api/categories"
+          expect:
+            - statusCode: 200
+
+  # Scenario 3: User Registration (15% of traffic)
+  - name: "User Registration"
+    weight: 15
+    flow:
+      - post:
+          url: "/api/auth/register"
+          json:
+            email: "user_{{ $randomNumber(10000, 99999) }}_{{ $timestamp }}@test.com"
+            password: "TestPassword123!"
+            name: "Load Test User {{ $randomNumber(1, 1000) }}"
+          expect:
+            - statusCode:
+                - 201
+                - 400  # User may already exist
+          capture:
+            - json: "$.token"
+              as: "authToken"
+      - think: 1
+
+  # Scenario 4: User Login (20% of traffic)
+  - name: "User Login"
+    weight: 20
+    flow:
+      # First register a user
+      - post:
+          url: "/api/auth/register"
+          json:
+            email: "login_{{ $randomNumber(10000, 99999) }}_{{ $timestamp }}@test.com"
+            password: "TestPassword123!"
+            name: "Login Test User"
+          capture:
+            - json: "$.user.email"
+              as: "userEmail"
+      - think: 1
+      # Then login with that user
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "{{ userEmail }}"
+            password: "TestPassword123!"
+          ifTrue: "userEmail"
+          expect:
+            - statusCode:
+                - 200
+                - 400
+          capture:
+            - json: "$.token"
+              as: "authToken"
+
+  # Scenario 5: Create Product (10% of traffic)
+  - name: "Create Product"
+    weight: 10
+    flow:
+      - post:
+          url: "/api/products"
+          json:
+            name: "Test Product {{ $randomNumber(1, 10000) }}"
+            description: "A high-quality test product for load testing"
+            price: "{{ $randomNumber(10, 1000) }}"
+            category: "{{ $randomString() }}"
+            stock: "{{ $randomNumber(1, 100) }}"
+          expect:
+            - statusCode:
+                - 201
+                - 429  # Rate limited is OK
+
+  # Scenario 6: Full E-commerce Flow (5% of traffic)
+  - name: "Full E-commerce Journey"
+    weight: 5
+    flow:
+      # Register
+      - post:
+          url: "/api/auth/register"
+          json:
+            email: "journey_{{ $randomNumber(10000, 99999) }}_{{ $timestamp }}@test.com"
+            password: "TestPassword123!"
+            name: "Journey User"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+            - json: "$.user.id"
+              as: "userId"
+      - think: 1
+      
+      # Browse products
+      - get:
+          url: "/api/products"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          capture:
+            - json: "$.products[0]._id"
+              as: "productId"
+      - think: 2
+      
+      # Create an order (if we have a product)
+      - post:
+          url: "/api/orders"
+          ifTrue: "productId"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            userId: "{{ userId }}"
+            items:
+              - productId: "{{ productId }}"
+                quantity: 1
+          expect:
+            - statusCode:
+                - 201
+                - 400
+                - 500  # May fail if product doesn't exist
+
+---
+# ===== Quick Test Configuration (for development) =====
+# Run with: npx artillery run --config artillery-load-test.yml:quick
+
+quick:
+  config:
+    phases:
+      - name: "Quick Test"
+        duration: 30
+        arrivalRate: 50

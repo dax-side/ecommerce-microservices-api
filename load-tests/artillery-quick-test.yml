@@ -1,0 +1,36 @@
+# ===== Artillery Quick Test Configuration =====
+# For rapid testing during development
+# Run with: npx artillery run artillery-quick-test.yml
+
+config:
+  target: "http://localhost:3000"
+  phases:
+    - name: "Quick Load Test"
+      duration: 30
+      arrivalRate: 50
+      rampTo: 100
+
+  defaults:
+    headers:
+      Content-Type: "application/json"
+
+scenarios:
+  - name: "Health & Products"
+    weight: 70
+    flow:
+      - get:
+          url: "/health"
+      - get:
+          url: "/api/products"
+      - get:
+          url: "/api/categories"
+
+  - name: "Registration"
+    weight: 30
+    flow:
+      - post:
+          url: "/api/auth/register"
+          json:
+            email: "quick_{{ $randomNumber(10000, 99999) }}_{{ $timestamp }}@test.com"
+            password: "TestPassword123!"
+            name: "Quick Test User"
