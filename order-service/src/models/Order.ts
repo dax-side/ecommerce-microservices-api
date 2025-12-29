@@ -40,7 +40,8 @@ const orderItemSchema = new Schema<IOrderItem>({
 const orderSchema = new Schema<IOrder>({
   userId: {
     type: String,
-    required: true
+    required: true,
+    index: true  // Single field index for user order lookups
   },
   items: [orderItemSchema],
   totalAmount: {
@@ -51,10 +52,27 @@ const orderSchema = new Schema<IOrder>({
   status: {
     type: String,
     enum: ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'],
-    default: 'pending'
+    default: 'pending',
+    index: true  // Single field index for status filtering
   }
 }, {
   timestamps: true
 });
+
+// ===== Performance Indexes =====
+// Compound index for user orders sorted by date (most common query)
+orderSchema.index({ userId: 1, createdAt: -1 });
+
+// Compound index for status + date (admin filtering)
+orderSchema.index({ status: 1, createdAt: -1 });
+
+// Compound index for user + status (user's pending/shipped orders)
+orderSchema.index({ userId: 1, status: 1 });
+
+// Index for date range queries
+orderSchema.index({ createdAt: -1 });
+
+// Index for total amount (analytics, filtering by order value)
+orderSchema.index({ totalAmount: -1 });
 
 export const Order = mongoose.model<IOrder>('Order', orderSchema);

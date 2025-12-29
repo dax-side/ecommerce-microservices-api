@@ -1,4 +1,4 @@
-// ===== src/cache/redis.ts =====
+// ===== Optimized Redis Cache with Pattern Deletion & Connection Pooling =====
 import Redis from 'ioredis';
 
 const redis = new Redis({
@@ -6,17 +6,22 @@ const redis = new Redis({
   port: 6379,
   maxRetriesPerRequest: 3,
   lazyConnect: true,
+  enableReadyCheck: true,
+  retryStrategy: (times) => {
+    if (times > 3) return null;
+    return Math.min(times * 200, 2000);
+  }
 });
 
 redis.on('connect', () => {
-  console.log('Redis connected');
+  console.log('[OK] Redis connected (order-service)');
 });
 
 redis.on('error', (err) => {
-  console.error('Redis error:', err);
+  console.error('[ERROR] Redis error:', err.message);
 });
 
-// Cache helper functions
+// Cache helper functions with enhanced capabilities
 export const cache = {
   async get(key: string) {
     try {
@@ -45,6 +50,41 @@ export const cache = {
     } catch (error) {
       console.error('Cache delete error:', error);
       return false;
+    }
+  },
+
+  // Pattern-based deletion using SCAN (memory efficient)
+  async delPattern(pattern: string) {
+    try {
+      let cursor = '0';
+      let deletedCount = 0;
+      
+      do {
+        const [newCursor, keys] = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', 100);
+        cursor = newCursor;
+        
+        if (keys.length > 0) {
+          await redis.del(...keys);
+          deletedCount += keys.length;
+        }
+      } while (cursor !== '0');
+      
+      return deletedCount;
+    } catch (error) {
+      console.error('Cache pattern delete error:', error);
+      return 0;
+    }
+  },
+
+  // Get multiple keys at once
+  async mget(keys: string[]) {
+    try {
+      if (keys.length === 0) return [];
+      const values = await redis.mget(keys);
+      return values.map(v => v ? JSON.parse(v) : null);
+    } catch (error) {
+      console.error('Cache mget error:', error);
+      return keys.map(() => null);
     }
   },
 
