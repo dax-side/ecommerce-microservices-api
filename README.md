@@ -1,10 +1,10 @@
 # E-commerce Microservices API
 
-A high-performance e-commerce backend built with Node.js, TypeScript, and Docker. Handles 500+ concurrent users with 10x throughput compared to the original implementation.
+An e-commerce backend with Node.js, TypeScript, and Docker. Tested with 500 concurrent users at 10x faster throughput than the first version.
 
-## What This Project Does
+## What It Does
 
-Four microservices handle user authentication, product catalog, and order management. An API Gateway routes requests while Nginx handles load balancing. Redis caches frequent queries. MongoDB stores all data.
+Four services split the work: user auth, product catalog, and order management. The API Gateway routes traffic. Nginx balances load. Redis caches database queries. MongoDB holds the data.
 
 ```
 Client --> Nginx (port 80) --> API Gateway (port 3000)
@@ -19,11 +19,11 @@ Client --> Nginx (port 80) --> API Gateway (port 3000)
                               MongoDB + Redis
 ```
 
-## Performance Numbers
+## Performance
 
-Tested with Artillery and k6 load testing tools.
+Load tested with Artillery and k6.
 
-### Before Optimization
+### Before
 | Metric | Value |
 |--------|-------|
 | Requests/second | 48.67 |
@@ -31,7 +31,7 @@ Tested with Artillery and k6 load testing tools.
 | Response time (avg) | 1,002ms |
 | Max concurrent users | 50 |
 
-### After Optimization
+### After
 | Metric | Value |
 |--------|-------|
 | Requests/second | 520-600 |
@@ -39,19 +39,19 @@ Tested with Artillery and k6 load testing tools.
 | Response time (avg) | 150-300ms |
 | Max concurrent users | 500 |
 
-The optimized version processes 10x more throughput. Response times dropped by 70%.
+10x more requests per second. 70% faster responses.
 
-### Bottleneck at 500 Users
+### At 500 Users
 
-At 500 concurrent users with a single container, the system shows 15% success rate. This is expected behavior. For full 500-user support:
+A single container setup hits 15% success rate at 500 concurrent users. This is where things break down. To handle all 500 users:
 
-- Deploy multiple API Gateway replicas
-- Add MongoDB connection pooling (already configured for 50 connections)
+- Run multiple API Gateway containers
+- MongoDB connection pool already set to 50
 - Scale Redis with clustering
 
-At 200 users, the system maintains 100% success rate with sub-second responses.
+At 200 users, 100% success rate with responses under one second.
 
-## Quick Start
+## Start
 
 ```bash
 # Clone and start
@@ -64,9 +64,9 @@ curl http://localhost/health
 curl http://localhost/api/products
 ```
 
-Services start on these ports:
-- **80**: Nginx (main entry point)
-- **3000**: API Gateway (direct access)
+Ports:
+- **80**: Nginx (main entry)
+- **3000**: API Gateway
 - **3001**: User Service
 - **3002**: Product Service
 - **3003**: Order Service
@@ -133,36 +133,36 @@ ecommerce-microservices-api/
   nginx.conf            # Reverse proxy config
 ```
 
-## Performance Optimizations Applied
+## How It Got Faster
 
-### Database Layer
-- Connection pool: 50 max connections (up from 10)
-- Indexes on all query fields (category, price, userId, status)
-- Text indexes for product search
+### Database
+- 50 connection pool (was 10)
+- Indexes on category, price, userId, status
+- Text search indexes on products
 
 ### Caching
 - Redis with 1GB memory
-- 5-minute TTL for products
-- JWT token caching
-- User profile caching
+- 5-minute cache on products
+- JWT tokens cached
+- User profiles cached
 
-### Application Layer
-- Reduced bcrypt rounds from 10 to 8 (4x faster hashing)
-- Parallel product validation in orders
-- Circuit breaker for service-to-service calls
-- UV threadpool size increased to 16
+### Code
+- bcrypt rounds down to 8 (was 10, 4x faster)
+- Parallel product checks in orders
+- Circuit breaker on service calls
+- UV threadpool set to 16
 
 ### Infrastructure
-- Nginx keepalive connections (32 per upstream)
+- Nginx keepalive: 32 connections
 - Gzip compression
-- Proxy caching for read endpoints
+- Proxy cache on read paths
 - 1GB RAM per container
 
-## Load Testing
+## Testing Load
 
-Three testing tools are included:
+Three tools included.
 
-### Simple Node.js Test
+### Node.js
 ```bash
 cd load-tests
 node simple-test.js
@@ -176,11 +176,10 @@ npx artillery quick --count 100 --num 50 http://localhost/api/products
 
 ### k6
 ```bash
-# Install k6 first
 k6 run --vus 200 --duration 30s -e BASE_URL=http://localhost k6-simple-test.js
 ```
 
-Sample k6 output at 200 users:
+k6 results at 200 users:
 ```
 http_reqs: 18332 (599/sec)
 http_req_duration: p95=902ms
@@ -213,32 +212,31 @@ REDIS_HOST=redis
 
 ## Monitoring
 
-Prometheus scrapes metrics from all services. Grafana provides dashboards.
+Prometheus collects metrics. Grafana shows dashboards.
 
 ```bash
 # Prometheus
 open http://localhost:9090
 
-# Grafana (login: admin/admin)
+# Grafana (admin/admin)
 open http://localhost:3030
 ```
 
-Available metrics:
+Metrics tracked:
 - HTTP request rates and latencies
 - Container CPU and memory
-- MongoDB connection pool status
+- MongoDB connection pool
 - Redis hit/miss ratios
 
-## Scaling Beyond 500 Users
+## Scaling Past 500
 
-For higher load, deploy multiple instances:
+Run multiple containers:
 
 ```bash
-# Scale services
 docker-compose up --scale api-gateway=3 --scale user-service=2
 ```
 
-Update nginx.conf to include multiple upstream servers:
+Add to nginx.conf:
 
 ```nginx
 upstream api_gateway {
@@ -249,11 +247,11 @@ upstream api_gateway {
 }
 ```
 
-For production deployments, consider:
+Production options:
 - Kubernetes for auto-scaling
-- MongoDB Atlas dedicated clusters
+- MongoDB Atlas dedicated cluster
 - Redis Sentinel or Cluster
-- CDN for static content
+- CDN for static files
 
 ## Tech Stack
 
