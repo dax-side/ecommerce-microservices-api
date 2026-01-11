@@ -41,6 +41,17 @@ Load tested with Artillery and k6.
 
 10x more requests per second. 70% faster responses.
 
+### Load Test Results
+
+**k6 Test - 200 Concurrent Users (60 seconds):**
+
+![k6 Load Test Results](k6_load_test.png)
+
+- **Success Rate:** 100% (0 errors, 21,672 iterations)
+- **Response Time (avg):** 224ms
+- **Response Time (p95):** 698ms
+- **Requests:** 43,344 total
+
 ### At 500 Users
 
 A single container setup hits 15% success rate at 500 concurrent users. This is where things break down. To handle all 500 users:
